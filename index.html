@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS Contabilidade - Controle de Documentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans">
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6">
+        <header class="bg-white shadow rounded-lg p-4 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">RPS Contabilidade</h1>
+                <p class="text-sm text-slate-500">Controle de Entrega de Documentos e Obrigações</p>
+            </div>
+            <div id="user-info" class="text-right"></div>
+        </header>
+
+        <!-- TELA DE LOGIN -->
+        <div id="login-screen" class="max-md mx-auto bg-white p-8 rounded-lg shadow-md max-w-md mt-10">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800 text-center">Acessar Sistema</h2>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Usuário</label>
+                    <input type="text" id="username" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Senha</label>
+                    <input type="password" id="password" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold">Entrar</button>
+            </form>
+        </div>
+
+        <!-- PAINEL PRINCIPAL (Oculto inicialmente) -->
+        <div id="dashboard-screen" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+                <span class="text-lg font-semibold text-slate-700">Painel de Controle</span>
+                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600">Sair</button>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <p class="text-slate-600">Bem-vindo ao sistema conectado ao Banco de Dados e Railway!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mude para o link do seu Railway assim que quiser testar online:
+        const API_URL = 'https://respectful-inspiration-production-e523.up.railway.app';
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    checkAuth();
+                } else {
+                    alert(data.error || 'Erro ao fazer login.');
+                }
+            } catch (err) {
+                alert('Erro de conexão com o servidor.');
+            }
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (token) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard-screen').classList.remove('hidden');
+                document.getElementById('user-info').innerHTML = `<span class="font-bold text-slate-700">${user.name || 'Usuário'}</span><br><span class="text-xs text-slate-500 uppercase">${user.role || 'user'}</span>`;
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('dashboard-screen').classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkAuth();
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>
