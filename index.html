@@ -3,95 +3,1686 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPS Contabilidade - Controle de Documentos</title>
+    <title>Controle de Informações Contábeis - Gestão Profissional</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#ECFDF5',
+                            100: '#D1FAE5',
+                            200: '#A7F3D0',
+                            400: '#34D399',
+                            500: '#10B981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065F46',
+                            900: '#064E3B',
+                            950: '#022C22',
+                        }
+                    },
+                    boxShadow: {
+                        'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02)',
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.02)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; color: #1E293B; }
+        .sidebar-link.active { background-color: #065F46; color: #FFFFFF; border-left: 4px solid #34D399; font-weight: 700; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover:not(.active) { background-color: rgba(6, 95, 70, 0.4); color: #ECFDF5; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        .fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+        .month-checkbox:checked + div { background-color: #10B981; color: white; border-color: #10B981; }
+        .logo-rps { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+        .dragging { opacity: 0.4; background: #E2E8F0; }
+        .drag-over { border-top: 2px dashed #10B981 !important; }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans">
-    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6">
-        <header class="bg-white shadow rounded-lg p-4 mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold text-slate-800">RPS Contabilidade</h1>
-                <p class="text-sm text-slate-500">Controle de Entrega de Documentos e Obrigações</p>
+<body class="flex h-screen overflow-hidden antialiased">
+
+    <!-- Sidebar Profissional -->
+    <aside class="w-64 bg-primary-900 text-slate-100 flex flex-col shadow-xl z-20">
+        <div class="p-5 flex items-center gap-3 bg-primary-950/60 border-b border-primary-800/60">
+            <div class="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center text-white shadow-sm logo-rps text-xl">
+                RPS
             </div>
-            <div id="user-info" class="text-right"></div>
+            <div>
+                <h1 class="text-xs font-bold text-white tracking-wide leading-tight">Controle de Informações Contábeis</h1>
+            </div>
+        </div>
+        
+        <nav class="flex-1 py-5 flex flex-col gap-1.5 px-3 overflow-y-auto">
+            <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/80">Menu Principal</div>
+            <a href="#" onclick="navigate('dashboard')" id="nav-dashboard" class="sidebar-link active flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium">
+                <i class="fas fa-chart-pie w-5 text-center"></i> Dashboard
+            </a>
+            <a href="#" onclick="navigate('pendencies')" id="nav-pendencies" class="sidebar-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium">
+                <i class="fas fa-exclamation-circle w-5 text-center"></i> Pendências Totais
+            </a>
+            <a href="#" onclick="navigate('checklist')" id="nav-checklist" class="sidebar-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium">
+                <i class="fas fa-tasks w-5 text-center"></i> Painel de Cobrança
+            </a>
+            <a href="#" onclick="navigate('bank_statements')" id="nav-bank-statements" class="sidebar-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium">
+                <i class="fas fa-university w-5 text-center"></i> Status Extratos
+            </a>
+
+            <div class="mt-6 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/80">Controle Interno</div>
+            <a href="#" onclick="navigate('import_athenas')" id="nav-import_athenas" class="sidebar-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium">
+                <i class="fas fa-file-import w-5 text-center"></i> Importação Athenas
+            </a>
+            
+            <div class="mt-8 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/80">Sistema</div>
+            <div class="mt-auto px-1 pt-4">
+                <button onclick="resetDatabase()" class="w-full bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs py-2.5 px-3 rounded-xl border border-red-900/50 transition font-medium flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Resetar Equipe Atual
+                </button>
+            </div>
+        </nav>
+        
+        <div class="p-4 bg-primary-950/80 border-t border-primary-800/60 flex flex-col gap-2">
+            <div class="text-xs text-primary-300/80 flex items-center justify-between">
+                <span>Exercício Vigente</span>
+                <select id="current-year-select" onchange="changeCurrentYear(this.value)" class="bg-primary-800 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold border border-primary-700 focus:outline-none cursor-pointer">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                </select>
+            </div>
+            <div class="text-[11px] text-primary-300/60 italic text-right font-light tracking-wide">
+                Criado por: Marco
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+        <header class="bg-white h-16 shadow-subtle border-b border-slate-200/80 flex items-center justify-between px-8 z-10">
+            <div id="page-title" class="text-base font-bold text-slate-800 flex items-center gap-2.5"></div>
+            <div class="flex items-center gap-4">
+                <!-- Seletor de Equipe na parte superior -->
+                <div class="flex items-center gap-2 bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <i class="fas fa-users text-primary-600 text-xs"></i>
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Equipe:</span>
+                    <select id="current-team-select" onchange="changeCurrentTeam(this.value)" class="bg-transparent text-sm font-bold text-slate-800 focus:outline-none cursor-pointer">
+                        <option value="equipe_01">Equipe 01</option>
+                        <option value="equipe_02">Equipe 02</option>
+                        <option value="equipe_03">Equipe 03</option>
+                        <option value="equipe_04">Equipe 04</option>
+                        <option value="equipe_05">Equipe 05</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2.5 bg-slate-100/80 px-3.5 py-1.5 rounded-xl border border-slate-200">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Período:</span>
+                    <select id="global-month" onchange="changeGlobalMonth(this.value)" class="bg-transparent text-sm font-bold text-slate-800 focus:outline-none cursor-pointer">
+                        <option value="all">Visão Anual (Todo o Ano)</option>
+                    </select>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shadow-inner border border-primary-200" title="Marco Guilherme">
+                    MG
+                </div>
+            </div>
         </header>
 
-        <!-- TELA DE LOGIN -->
-        <div id="login-screen" class="max-md mx-auto bg-white p-8 rounded-lg shadow-md max-w-md mt-10">
-            <h2 class="text-2xl font-bold mb-6 text-slate-800 text-center">Acessar Sistema</h2>
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Usuário</label>
-                    <input type="text" id="username" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Senha</label>
-                    <input type="password" id="password" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold">Entrar</button>
-            </form>
-        </div>
+        <div id="app-content" class="flex-1 overflow-y-auto p-8 bg-slate-50"></div>
+    </main>
 
-        <!-- PAINEL PRINCIPAL (Oculto inicialmente) -->
-        <div id="dashboard-screen" class="hidden space-y-6">
-            <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-                <span class="text-lg font-semibold text-slate-700">Painel de Controle</span>
-                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600">Sair</button>
+    <!-- Modal Nova / Editar Empresa -->
+    <div id="modal-client" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade-in border border-slate-100">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2.5" id="modal-client-title">
+                    <i class="fas fa-building text-primary-500"></i> Cadastrar Nova Empresa
+                </h3>
+                <button onclick="closeModal('modal-client')" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <p class="text-slate-600">Bem-vindo ao sistema conectado ao Banco de Dados e Railway!</p>
+            <input type="hidden" id="edit-client-id" value="">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Razão Social / Nome Fantasia</label>
+                    <input type="text" id="new-client-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition outline-none font-medium" placeholder="Ex: COMÉRCIO DE MATERIAIS LTDA">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">CNPJ (Opcional)</label>
+                    <input type="text" id="new-client-cnpj" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition outline-none font-medium" placeholder="00.000.000/0001-00">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button onclick="closeModal('modal-client')" class="px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Cancelar</button>
+                <button onclick="saveClient()" class="px-5 py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl shadow-sm transition">Salvar Empresa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Regra (Documento) -->
+    <div id="modal-config" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 fade-in border border-slate-100">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2.5" id="modal-config-title">
+                    <i class="fas fa-file-contract text-primary-500"></i> Configurar Exigência de Documento
+                </h3>
+                <button onclick="closeModal('modal-config')" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <input type="hidden" id="config-id" value="">
+            
+            <div class="mb-5 flex gap-4 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200" id="config-mode-container">
+                <label class="flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-700 bg-white shadow-sm" id="label-mode-single">
+                    <input type="radio" name="config_mode" id="mode-single" value="single" checked onchange="toggleConfigMode()" class="hidden">
+                    <i class="fas fa-file-alt text-primary-500"></i> Documento Único
+                </label>
+                <label class="flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700" id="label-mode-package">
+                    <input type="radio" name="config_mode" id="mode-package" value="package" onchange="toggleConfigMode()" class="hidden">
+                    <i class="fas fa-boxes text-primary-500"></i> Pacote Padrão
+                </label>
+            </div>
+
+            <div class="space-y-4">
+                <div id="package-info" class="hidden bg-primary-50 border border-primary-200 text-primary-900 rounded-xl p-3.5 text-xs font-medium">
+                    <strong>Pacote Padrão Selecionado:</strong> Serão criadas 3 regras simultâneas (<span class="font-bold">Extrato Bancário, Venda de Cartão e Aplicações Financeiras</span>).
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 md:col-span-1" id="single-doc-fields">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tipo de Documento</label>
+                        <select id="config-doc-id" onchange="toggleCustomDocName()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 transition outline-none font-medium"></select>
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Dia do Vencimento</label>
+                        <input type="number" id="config-due-day" min="1" max="31" value="10" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 transition outline-none font-medium">
+                    </div>
+                </div>
+                
+                <div id="custom-doc-container" class="hidden">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-primary-700 mb-1.5">Descrição Específica (Outros)</label>
+                    <input type="text" id="config-custom-name" class="w-full bg-primary-50/40 border border-primary-300 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 transition outline-none font-medium" placeholder="Digite o nome personalizado...">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Entidade / Banco (Opcional)</label>
+                    <input type="text" id="config-entity" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-primary-500 transition outline-none font-medium" placeholder="Ex: Itaú, Santander, Prefeitura...">
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Meses de Exigência</label>
+                        <button onclick="selectAllMonths()" class="text-xs text-primary-600 hover:text-primary-700 font-bold tracking-wide">Marcar Todos</button>
+                    </div>
+                    <div class="grid grid-cols-4 md:grid-cols-6 gap-2" id="month-checkboxes-container"></div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button onclick="closeModal('modal-config')" class="px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Cancelar</button>
+                <button onclick="saveConfig()" class="px-5 py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl shadow-sm transition">Salvar Regra</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Mude para o link do seu Railway assim que quiser testar online:
-        const API_URL = 'https://respectful-inspiration-production-e523.up.railway.app';
+        let dbAllTeams = {};
+        let currentTeam = 'equipe_01';
+        let db;
+        let currentYear = 2026;
+        let globalMonth = 'all'; 
+        let currentView = 'dashboard';
+        let currentClientId = null;
+        let currentMonthDetail = null;
 
-        async function handleLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-            try {
-                const response = await fetch(`${API_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    checkAuth();
-                } else {
-                    alert(data.error || 'Erro ao fazer login.');
-                }
-            } catch (err) {
-                alert('Erro de conexão com o servidor.');
-            }
-        }
+        const initialData = {
+            docTypes: [
+                { id: 1, name: "Extrato Bancário" },
+                { id: 2, name: "Notas Fiscais de Entrada" },
+                { id: 3, name: "Notas Fiscais de Saída" },
+                { id: 4, name: "Comprovantes de Despesa" },
+                { id: 5, name: "VENDA DE CARTÃO" },
+                { id: 6, name: "APLICAÇÕES FINANCEIRAS" },
+                { id: 7, name: "INVESTIMENTOS" },
+                { id: 8, name: "DOCUMENTOS DE EMPRÉSTIMO" },
+                { id: 9, name: "XML MENSAL" },
+                { id: 99, name: "OUTROS" } 
+            ],
+            clients: [
+                { id: 1, name: "EMPRESA DE EXEMPLO S/A", cnpj: "00.000.000/0001-00" }
+            ],
+            configs: [], 
+            statuses: [],
+            notes: {},
+            customChecklistOrder: {},
+            importedStatuses: {}
+        };
 
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (token) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard-screen').classList.remove('hidden');
-                document.getElementById('user-info').innerHTML = `<span class="font-bold text-slate-700">${user.name || 'Usuário'}</span><br><span class="text-xs text-slate-500 uppercase">${user.role || 'user'}</span>`;
+        function loadDatabase() {
+            const saved = localStorage.getItem('contabilDB_MultiTeams_V10');
+            if (saved) {
+                dbAllTeams = JSON.parse(saved);
             } else {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('dashboard-screen').classList.add('hidden');
+                // Inicializa separadamente para as 5 equipes
+                dbAllTeams = {
+                    'equipe_01': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_02': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_03': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_04': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_05': JSON.parse(JSON.stringify(initialData))
+                };
+                saveDatabase();
+            }
+
+            if(!dbAllTeams[currentTeam]) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+            }
+            
+            db = dbAllTeams[currentTeam];
+            if(!db.notes) db.notes = {};
+            if(!db.customChecklistOrder) db.customChecklistOrder = {};
+            if(!db.importedStatuses) db.importedStatuses = {};
+            
+            document.getElementById('current-year-select').value = currentYear;
+            document.getElementById('current-team-select').value = currentTeam;
+            populateSelectors();
+        }
+
+        function saveDatabase() {
+            localStorage.setItem('contabilDB_MultiTeams_V10', JSON.stringify(dbAllTeams));
+        }
+
+        function changeCurrentTeam(teamKey) {
+            currentTeam = teamKey;
+            if(!dbAllTeams[currentTeam]) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+            }
+            db = dbAllTeams[currentTeam];
+            if(!db.notes) db.notes = {};
+            if(!db.customChecklistOrder) db.customChecklistOrder = {};
+            if(!db.importedStatuses) db.importedStatuses = {};
+
+            populateSelectors();
+            if (currentView === 'dashboard') renderDashboard();
+            else if (currentView === 'pendencies') renderPendencies();
+            else if (currentView === 'checklist') renderChecklist();
+            else if (currentView === 'bank_statements') renderBankStatements();
+            else if (currentView === 'import_athenas') renderImportAthenas();
+            else if (currentView === 'client_dashboard') renderClientDashboard(currentClientId, 'history');
+            else if (currentView === 'client_dashboard_config') renderClientDashboard(currentClientId, 'config');
+            else if (currentView === 'client_month') renderClientMonthDetail(currentClientId, currentMonthDetail);
+            else navigate('dashboard');
+        }
+
+        function resetDatabase() {
+            if(confirm('Tem certeza que deseja apagar todos os dados e resetar a equipe atual (' + document.getElementById('current-team-select').options[document.getElementById('current-team-select').selectedIndex].text + ')?')) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+                db = dbAllTeams[currentTeam];
+                saveDatabase();
+                navigate('dashboard');
             }
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            checkAuth();
+        function changeCurrentYear(year) {
+            currentYear = parseInt(year);
+            populateSelectors();
+            if (currentView === 'dashboard') renderDashboard();
+            else if (currentView === 'pendencies') renderPendencies();
+            else if (currentView === 'checklist') renderChecklist();
+            else if (currentView === 'bank_statements') renderBankStatements();
+            else if (currentView === 'import_athenas') renderImportAthenas();
         }
 
-        checkAuth();
+        function formatMonth(m) {
+            return String(m).padStart(2, '0') + '/' + currentYear;
+        }
+
+        function getFullDocName(docId, customName) {
+            if (docId === 99 && customName) return customName;
+            const doc = db.docTypes.find(d => d.id === docId);
+            return doc ? doc.name : 'Desconhecido';
+        }
+
+        function populateSelectors() {
+            const select = document.getElementById('global-month');
+            let optionsHTML = `<option value="all">Visão Anual (Todo o Ano)</option>`;
+            optionsHTML += Array.from({length: 12}, (_, i) => i + 1).map(m => 
+                `<option value="${m}">${formatMonth(m)}</option>`
+            ).join('');
+            select.innerHTML = optionsHTML;
+            select.value = globalMonth;
+            
+            const cbContainer = document.getElementById('month-checkboxes-container');
+            cbContainer.innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(m => `
+                <label class="cursor-pointer">
+                    <input type="checkbox" class="hidden month-checkbox" value="${m}">
+                    <div class="text-center py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition shadow-subtle">
+                        ${String(m).padStart(2, '0')}
+                    </div>
+                </label>
+            `).join('');
+
+            document.getElementById('config-doc-id').innerHTML = db.docTypes.map(d => 
+                `<option value="${d.id}">${d.name}</option>`
+            ).join('');
+        }
+
+        function selectAllMonths() {
+            document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = true);
+        }
+
+        function toggleCustomDocName() {
+            const docId = parseInt(document.getElementById('config-doc-id').value);
+            const container = document.getElementById('custom-doc-container');
+            const modePackage = document.getElementById('mode-package').checked;
+            
+            if (docId === 99 && !modePackage) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('config-custom-name').value = '';
+            }
+        }
+
+        function toggleConfigMode() {
+            const isPackage = document.getElementById('mode-package').checked;
+            const singleFields = document.getElementById('single-doc-fields');
+            const packageInfo = document.getElementById('package-info');
+            const lblSingle = document.getElementById('label-mode-single');
+            const lblPackage = document.getElementById('label-mode-package');
+            
+            if(isPackage) {
+                singleFields.classList.add('hidden');
+                packageInfo.classList.remove('hidden');
+                lblPackage.className = "flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-700 bg-white shadow-sm";
+                lblSingle.className = "flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700";
+            } else {
+                singleFields.classList.remove('hidden');
+                packageInfo.classList.add('hidden');
+                lblSingle.className = "flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-700 bg-white shadow-sm";
+                lblPackage.className = "flex-1 flex items-center justify-center gap-2 cursor-pointer py-2 rounded-lg transition text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700";
+            }
+            toggleCustomDocName();
+        }
+
+        function changeGlobalMonth(val) {
+            globalMonth = val === 'all' ? 'all' : parseInt(val);
+            if (currentView === 'dashboard') renderDashboard();
+            else if (currentView === 'pendencies') renderPendencies();
+            else if (currentView === 'checklist') renderChecklist();
+        }
+
+        function getRequiredDocsForMonth(clientId, month) {
+            return db.configs.filter(c => c.client_id === clientId && c.months.includes(month));
+        }
+
+        function calculateDelay(dueDay, month, status) {
+            if (status === "Recebido") return 0;
+            const due = new Date(currentYear, month - 1, dueDay);
+            const today = new Date(); 
+            const diffTime = today - due;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        function getClientPeriodStats(clientId, period) {
+            let monthsToCheck = period === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : [period];
+            
+            let expected = 0;
+            let received = 0;
+            let delayed = 0;
+
+            monthsToCheck.forEach(m => {
+                const required = getRequiredDocsForMonth(clientId, m);
+                expected += required.length;
+
+                required.forEach(req => {
+                    const s = db.statuses.find(x => x.config_id === req.id && x.month === m);
+                    const statusStr = s ? s.status : 'Pendente';
+                    
+                    if (statusStr === 'Recebido') received++;
+                    else if (calculateDelay(req.due_day, m, statusStr) > 0) delayed++;
+                });
+            });
+
+            const pending = expected - received;
+            const percent = expected === 0 ? 0 : Math.round((received / expected) * 100);
+            
+            let situation = "Pendente";
+            let sitClass = "bg-amber-50 text-amber-700 border-amber-200";
+            
+            if (expected > 0 && percent === 100) { situation = "Completo"; sitClass = "bg-primary-50 text-primary-700 border-primary-200"; } 
+            else if (expected > 0 && (percent < 50 || delayed > 2)) { situation = "Crítico"; sitClass = "bg-rose-50 text-rose-700 border-rose-200"; } 
+            else if (expected === 0) { situation = "S/ Docs"; sitClass = "bg-slate-100 text-slate-500 border-slate-200"; }
+
+            return { expected, received, pending, delayed, percent, situation, sitClass };
+        }
+
+        function saveClientNote(clientId, text) {
+            db.notes[clientId] = text;
+            saveDatabase();
+        }
+
+        // Funções de Drag & Drop para reordenar pendências unificadas no Painel de Cobrança
+        let checklistDragSourceId = null;
+        let checklistDraggedIndex = null;
+
+        function checklistDragStart(e, clientId, index) {
+            checklistDragSourceId = clientId;
+            checklistDraggedIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.classList.add('opacity-40');
+        }
+
+        function checklistDragOver(e, clientId, index) {
+            if (checklistDragSourceId !== clientId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const item = e.target.closest('.checklist-item-card');
+            if (item) item.classList.add('border-primary-500', 'bg-primary-50/20');
+        }
+
+        function checklistDragLeave(e) {
+            const item = e.target.closest('.checklist-item-card');
+            if (item) item.classList.remove('border-primary-500', 'bg-primary-50/20');
+        }
+
+        function checklistDrop(e, clientId, index, currentList) {
+            if (checklistDragSourceId !== clientId) return;
+            e.preventDefault();
+            const item = e.target.closest('.checklist-item-card');
+            if (item) item.classList.remove('border-primary-500', 'bg-primary-50/20');
+
+            if (checklistDraggedIndex !== null && checklistDraggedIndex !== index) {
+                const moved = currentList.splice(checklistDraggedIndex, 1)[0];
+                currentList.splice(index, 0, moved);
+                
+                db.customChecklistOrder[clientId] = currentList.map(i => i.docKey);
+                saveDatabase();
+                renderChecklist();
+            }
+            checklistDraggedIndex = null;
+            checklistDragSourceId = null;
+        }
+
+        function sortChecklistAlphabetically(clientId, currentList) {
+            currentList.sort((a, b) => a.docTitle.localeCompare(b.docTitle));
+            db.customChecklistOrder[clientId] = currentList.map(i => i.docKey);
+            saveDatabase();
+            renderChecklist();
+        }
+
+        function copyChecklist(clientId) {
+            const client = db.clients.find(c => c.id === clientId);
+            let text = `Informamos que estão ausentes em nosso banco de dados os seguintes documentos:\n\n`;
+
+            let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
+            
+            let docMap = {};
+            let hasPendencies = false;
+
+            monthsToCheck.forEach(m => {
+                const reqs = getRequiredDocsForMonth(client.id, m);
+                reqs.forEach(req => {
+                    const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
+                    if (!statusObj || statusObj.status !== 'Recebido') {
+                        hasPendencies = true;
+                        const docTitle = getFullDocName(req.doc_id, req.custom_doc_name);
+                        const entityName = req.entity ? ` - ${req.entity}` : '';
+                        const key = docTitle + entityName;
+
+                        if (!docMap[key]) {
+                            docMap[key] = [];
+                        }
+                        if (!docMap[key].includes(m)) {
+                            docMap[key].push(m);
+                        }
+                    }
+                });
+            });
+
+            if(!hasPendencies && (!db.notes[clientId] || db.notes[clientId].trim() === '')) {
+                alert("Esta empresa não possui pendências ou notas para copiar!");
+                return;
+            }
+
+            Object.keys(docMap).forEach(key => {
+                let sortedMonths = docMap[key].sort((a, b) => a - b).map(m => String(m).padStart(2, '0'));
+                let monthsStr = '';
+                if (sortedMonths.length === 1) {
+                    monthsStr = sortedMonths[0];
+                } else if (sortedMonths.length === 2) {
+                    monthsStr = `${sortedMonths[0]} e ${sortedMonths[1]}`;
+                } else {
+                    let last = sortedMonths.pop();
+                    monthsStr = `${sortedMonths.join(', ')} e ${last}`;
+                }
+                text += `${key} - meses: ${monthsStr}.\n`;
+            });
+
+            if(db.notes[clientId] && db.notes[clientId].trim() !== '') {
+                text += `\n*Observações:* \n${db.notes[clientId]}\n`;
+            }
+
+            text += `\nPor favor, nos envie assim que possível!\nQualquer dúvida, estamos à disposição.`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Relação copiada com sucesso! Cole diretamente no WhatsApp.");
+            }).catch(err => {
+                alert("Erro ao copiar.");
+            });
+        }
+
+        function toggleImportStatus(configId, month) {
+            const key = `${configId}_${month}_${currentYear}`;
+            if (db.importedStatuses[key]) {
+                delete db.importedStatuses[key];
+            } else {
+                db.importedStatuses[key] = true;
+            }
+            saveDatabase();
+            renderImportAthenas();
+        }
+
+        function navigate(view, clientId = null, detailParams = null) {
+            currentView = view;
+            if (clientId) currentClientId = clientId;
+            
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            const pageTitle = document.getElementById('page-title');
+
+            if (view === 'dashboard') {
+                document.getElementById('nav-dashboard').classList.add('active');
+                pageTitle.innerHTML = `<i class="fas fa-chart-pie text-primary-500"></i> Dashboard Geral (${currentYear})`;
+                renderDashboard();
+            } 
+            else if (view === 'pendencies') {
+                document.getElementById('nav-pendencies').classList.add('active');
+                pageTitle.innerHTML = `<i class="fas fa-exclamation-circle text-primary-500"></i> Todas as Pendências (${currentYear})`;
+                renderPendencies();
+            }
+            else if (view === 'checklist') {
+                document.getElementById('nav-checklist').classList.add('active');
+                pageTitle.innerHTML = `<i class="fas fa-tasks text-primary-500"></i> Painel de Cobrança por Empresa (${currentYear})`;
+                renderChecklist();
+            }
+            else if (view === 'bank_statements') {
+                document.getElementById('nav-bank-statements').classList.add('active');
+                pageTitle.innerHTML = `<i class="fas fa-university text-primary-500"></i> Status Anual de Extratos Bancários (${currentYear})`;
+                renderBankStatements();
+            }
+            else if (view === 'import_athenas') {
+                document.getElementById('nav-import_athenas').classList.add('active');
+                pageTitle.innerHTML = `<i class="fas fa-file-import text-primary-500"></i> Controle de Importação Athenas (${currentYear})`;
+                renderImportAthenas();
+            }
+            else if (view === 'client_dashboard') {
+                const client = db.clients.find(c => c.id === currentClientId);
+                pageTitle.innerHTML = `
+                    <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-primary-600 transition font-normal">Dashboard</button> 
+                    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i> 
+                    <span class="text-slate-800 font-bold">${client.name}</span>
+                `;
+                renderClientDashboard(client.id, 'history');
+            }
+            else if (view === 'client_dashboard_config') {
+                const client = db.clients.find(c => c.id === currentClientId);
+                pageTitle.innerHTML = `
+                    <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-primary-600 transition font-normal">Dashboard</button> 
+                    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i> 
+                    <span class="text-slate-800 font-bold">${client.name}</span>
+                `;
+                renderClientDashboard(client.id, 'config');
+            }
+            else if (view === 'client_month') {
+                currentMonthDetail = detailParams;
+                const client = db.clients.find(c => c.id === currentClientId);
+                pageTitle.innerHTML = `
+                    <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-primary-600 transition font-normal">Dashboard</button> 
+                    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i> 
+                    <button onclick="navigate('client_dashboard', ${client.id})" class="text-slate-500 hover:text-primary-600 transition font-normal">${client.name}</button>
+                    <i class="fas fa-chevron-right text-[10px] text-slate-400"></i> 
+                    <span class="text-slate-800 font-bold">Mês ${formatMonth(detailParams)}</span>
+                `;
+                renderClientMonthDetail(client.id, detailParams);
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function openNewClientModal() {
+            document.getElementById('modal-client-title').innerHTML = `<i class="fas fa-building text-primary-500"></i> Cadastrar Nova Empresa`;
+            document.getElementById('edit-client-id').value = '';
+            document.getElementById('new-client-name').value = '';
+            document.getElementById('new-client-cnpj').value = '';
+            openModal('modal-client');
+        }
+
+        function openEditClientModal(clientId, event) {
+            if(event) event.stopPropagation();
+            const client = db.clients.find(c => c.id === clientId);
+            if(!client) return;
+
+            document.getElementById('modal-client-title').innerHTML = `<i class="fas fa-building text-primary-500"></i> Editar Empresa`;
+            document.getElementById('edit-client-id').value = client.id;
+            document.getElementById('new-client-name').value = client.name;
+            document.getElementById('new-client-cnpj').value = client.cnpj || '';
+            openModal('modal-client');
+        }
+
+        function saveClient() {
+            const editId = document.getElementById('edit-client-id').value;
+            const name = document.getElementById('new-client-name').value.toUpperCase();
+            const cnpj = document.getElementById('new-client-cnpj').value;
+            if(!name) return alert("Preencha a Razão Social.");
+
+            if(editId) {
+                const client = db.clients.find(c => c.id === parseInt(editId));
+                if(client) {
+                    client.name = name;
+                    client.cnpj = cnpj;
+                }
+            } else {
+                const newId = db.clients.length > 0 ? Math.max(...db.clients.map(c => c.id)) + 1 : 1;
+                db.clients.push({ id: newId, name, cnpj });
+            }
+
+            saveDatabase();
+            closeModal('modal-client');
+            if(currentView === 'dashboard') renderDashboard();
+            else if(currentView.startsWith('client_dashboard')) renderClientDashboard(currentClientId, currentView.includes('config') ? 'config' : 'history');
+        }
+
+        let draggedIndex = null;
+        function dragStart(e, index) {
+            draggedIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.classList.add('dragging');
+        }
+        function dragOver(e, index) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const tr = e.target.closest('tr');
+            if(tr) tr.classList.add('drag-over');
+        }
+        function dragLeave(e) {
+            const tr = e.target.closest('tr');
+            if(tr) tr.classList.remove('drag-over');
+        }
+        function drop(e, index) {
+            e.preventDefault();
+            const tr = e.target.closest('tr');
+            if(tr) tr.classList.remove('drag-over');
+
+            if (draggedIndex !== null && draggedIndex !== index) {
+                const movedClient = db.clients.splice(draggedIndex, 1)[0];
+                db.clients.splice(index, 0, movedClient);
+                saveDatabase();
+                renderDashboard();
+            }
+            draggedIndex = null;
+        }
+        function sortClientsAlphabetically() {
+            db.clients.sort((a, b) => a.name.localeCompare(b.name));
+            saveDatabase();
+            renderDashboard();
+        }
+
+        function openNewConfigModal() {
+            document.getElementById('modal-config-title').innerHTML = `<i class="fas fa-file-contract text-primary-500"></i> Nova Regra de Documento`;
+            document.getElementById('config-id').value = '';
+            document.getElementById('config-doc-id').value = '1';
+            document.getElementById('config-due-day').value = '10';
+            document.getElementById('config-entity').value = '';
+            document.getElementById('config-custom-name').value = '';
+            
+            document.getElementById('config-mode-container').classList.remove('hidden');
+            document.getElementById('mode-single').checked = true;
+            toggleConfigMode();
+
+            document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+            openModal('modal-config');
+        }
+
+        function editConfigModal(configId) {
+            const config = db.configs.find(c => c.id === configId);
+            if(!config) return;
+
+            document.getElementById('modal-config-title').innerHTML = `<i class="fas fa-file-contract text-primary-500"></i> Editar Regra de Documento`;
+            document.getElementById('config-id').value = config.id;
+            document.getElementById('config-doc-id').value = config.doc_id;
+            document.getElementById('config-due-day').value = config.due_day;
+            document.getElementById('config-entity').value = config.entity || '';
+            document.getElementById('config-custom-name').value = config.custom_doc_name || '';
+            
+            document.getElementById('config-mode-container').classList.add('hidden');
+            document.getElementById('mode-single').checked = true;
+            toggleConfigMode();
+            
+            document.querySelectorAll('.month-checkbox').forEach(cb => {
+                cb.checked = config.months.includes(parseInt(cb.value));
+            });
+            
+            openModal('modal-config');
+        }
+
+        function saveConfig() {
+            const editId = document.getElementById('config-id').value;
+            const isPackage = document.getElementById('mode-package').checked;
+            const dueDay = parseInt(document.getElementById('config-due-day').value);
+            const entity = document.getElementById('config-entity').value || null;
+            const selectedMonths = Array.from(document.querySelectorAll('.month-checkbox:checked')).map(cb => parseInt(cb.value));
+            
+            if(selectedMonths.length === 0) return alert("Selecione pelo menos um mês onde este documento será exigido.");
+
+            if (editId) {
+                const docId = parseInt(document.getElementById('config-doc-id').value);
+                let customName = null;
+                if (docId === 99) {
+                    customName = document.getElementById('config-custom-name').value;
+                    if (!customName.trim()) return alert("Digite a descrição do documento em 'Outros'.");
+                }
+                
+                const index = db.configs.findIndex(c => c.id === parseInt(editId));
+                if (index > -1) {
+                    db.configs[index] = {
+                        id: parseInt(editId),
+                        client_id: currentClientId,
+                        doc_id: docId,
+                        custom_doc_name: customName,
+                        entity: entity,
+                        due_day: dueDay,
+                        months: selectedMonths
+                    };
+                }
+            } else {
+                if (isPackage) {
+                    const packageDocs = [1, 5, 6];
+                    let currentMaxId = db.configs.length > 0 ? Math.max(...db.configs.map(c => c.id)) : 0;
+                    
+                    packageDocs.forEach(dId => {
+                        currentMaxId++;
+                        db.configs.push({
+                            id: currentMaxId,
+                            client_id: currentClientId,
+                            doc_id: dId,
+                            custom_doc_name: null,
+                            entity: entity,
+                            due_day: dueDay,
+                            months: selectedMonths
+                        });
+                    });
+                } else {
+                    const docId = parseInt(document.getElementById('config-doc-id').value);
+                    let customName = null;
+                    if (docId === 99) {
+                        customName = document.getElementById('config-custom-name').value;
+                        if (!customName.trim()) return alert("Digite a descrição do documento em 'Outros'.");
+                    }
+                    
+                    const newId = db.configs.length > 0 ? Math.max(...db.configs.map(c => c.id)) + 1 : 1;
+                    db.configs.push({
+                        id: newId,
+                        client_id: currentClientId,
+                        doc_id: docId,
+                        custom_doc_name: customName,
+                        entity: entity,
+                        due_day: dueDay,
+                        months: selectedMonths
+                    });
+                }
+            }
+
+            saveDatabase();
+            closeModal('modal-config');
+            renderClientDashboard(currentClientId, 'config');
+        }
+
+        function deleteConfig(configId) {
+            if(confirm("Deseja excluir esta regra de documento?")) {
+                db.configs = db.configs.filter(c => c.id !== configId);
+                db.statuses = db.statuses.filter(s => s.config_id !== configId);
+                saveDatabase();
+                renderClientDashboard(currentClientId, 'config');
+            }
+        }
+
+        function toggleDocumentStatus(configId, month) {
+            const index = db.statuses.findIndex(s => s.config_id === configId && s.month === month);
+            
+            if(index > -1) {
+                db.statuses.splice(index, 1);
+            } else {
+                db.statuses.push({ config_id: configId, month: month, status: 'Recebido' });
+            }
+            saveDatabase();
+
+            if (currentView === 'client_month') renderClientMonthDetail(currentClientId, currentMonthDetail);
+            else if (currentView === 'pendencies') renderPendencies();
+            else if (currentView === 'bank_statements') renderBankStatements();
+        }
+
+        const appContent = document.getElementById('app-content');
+
+        // --- DASHBOARD GERAL ---
+        function renderDashboard() {
+            let periodLabel = globalMonth === 'all' ? `Ano Todo (${currentYear})` : formatMonth(globalMonth);
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Escritório no Período:</span> 
+                            <span class="bg-primary-100 text-primary-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-subtle border border-primary-200">${periodLabel}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="sortClientsAlphabetically()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2" title="Organizar de A a Z">
+                                <i class="fas fa-sort-alpha-down"></i> Ordenar A-Z
+                            </button>
+                            <button onclick="openNewClientModal()" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Nova Empresa
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                        <div class="px-6 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-primary-500"></i> Dica: Arraste as linhas para cima ou para baixo para reordenar manualmente as empresas, ou use o botão "Ordenar A-Z".
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50/80 border-b border-slate-200 font-semibold">
+                                <tr>
+                                    <th class="w-10 px-2 py-4 text-center"><i class="fas fa-grip-vertical"></i></th>
+                                    <th class="px-6 py-4">Empresa</th>
+                                    <th class="px-6 py-4 text-center">Esperados</th>
+                                    <th class="px-6 py-4 text-center">Recebidos</th>
+                                    <th class="px-6 py-4 text-center">Pendentes</th>
+                                    <th class="px-6 py-4">Progresso</th>
+                                    <th class="px-6 py-4 text-center">Situação</th>
+                                    <th class="px-4 py-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="sortable-clients">
+            `;
+
+            if(db.clients.length === 0) {
+                html += `<tr><td colspan="8" class="px-6 py-12 text-center text-slate-400">Nenhuma empresa cadastrada no sistema.</td></tr>`;
+            } else {
+                db.clients.forEach((client, index) => {
+                    const s = getClientPeriodStats(client.id, globalMonth);
+                    const initial = client.name.charAt(0);
+                    html += `
+                        <tr draggable="true" 
+                            ondragstart="dragStart(event, ${index})" 
+                            ondragover="dragOver(event, ${index})" 
+                            ondragleave="dragLeave(event)" 
+                            ondrop="drop(event, ${index})"
+                            class="hover:bg-primary-50/30 cursor-pointer transition-colors group">
+                            <td class="px-2 py-4 text-center text-slate-300 group-hover:text-slate-500 cursor-grab active:cursor-grabbing">
+                                <i class="fas fa-grip-vertical"></i>
+                            </td>
+                            <td class="px-6 py-4" onclick="navigate('client_dashboard', ${client.id})">
+                                <div class="flex items-center gap-3.5">
+                                    <div class="w-9 h-9 rounded-xl bg-primary-100 text-primary-700 font-extrabold flex items-center justify-center text-xs shadow-inner">
+                                        ${initial}
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-slate-800 block">${client.name}</span>
+                                        <span class="text-[11px] text-slate-400">${client.cnpj || 'Sem CNPJ'}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-slate-600 font-medium" onclick="navigate('client_dashboard', ${client.id})">${s.expected}</td>
+                            <td class="px-6 py-4 text-center text-primary-600 font-bold" onclick="navigate('client_dashboard', ${client.id})">${s.received}</td>
+                            <td class="px-6 py-4 text-center ${s.pending > 0 ? 'text-amber-600 font-bold' : 'text-slate-400'}" onclick="navigate('client_dashboard', ${client.id})">${s.pending}</td>
+                            <td class="px-6 py-4" onclick="navigate('client_dashboard', ${client.id})">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs font-bold text-slate-700 w-8">${s.percent}%</span>
+                                    <div class="w-28 bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                        <div class="bg-primary-500 h-full rounded-full transition-all duration-500" style="width: ${s.percent}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center" onclick="navigate('client_dashboard', ${client.id})">
+                                <span class="px-3 py-1 rounded-full text-[11px] font-bold border ${s.sitClass} inline-block">${s.situation}</span>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <button onclick="openEditClientModal(${client.id}, event)" class="text-slate-500 hover:text-primary-600 bg-slate-100 hover:bg-primary-50 p-2 rounded-xl transition shadow-subtle" title="Editar Empresa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += `</tbody></table></div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- DASHBOARD DO CLIENTE ---
+        function renderClientDashboard(clientId, activeTab) {
+            const client = db.clients.find(c => c.id === clientId);
+            
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 p-6 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center text-2xl font-black shadow-inner">
+                                ${client.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-extrabold text-slate-900">${client.name}</h2>
+                                <p class="text-xs text-slate-500 mt-0.5">CNPJ: <span class="font-semibold text-slate-700">${client.cnpj || 'Não informado'}</span></p>
+                            </div>
+                        </div>
+                        <button onclick="openEditClientModal(${client.id})" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                            <i class="fas fa-edit"></i> Editar Dados da Empresa
+                        </button>
+                    </div>
+
+                    <div class="border-b border-slate-200">
+                        <nav class="-mb-px flex gap-6">
+                            <button onclick="navigate('client_dashboard', ${clientId})" class="pb-3 px-1 border-b-2 font-bold text-xs uppercase tracking-wider transition ${activeTab === 'history' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}">
+                                <i class="fas fa-calendar-alt mr-1.5"></i> Visão Mensal (01 a 12)
+                            </button>
+                            <button onclick="navigate('client_dashboard_config', ${clientId})" class="pb-3 px-1 border-b-2 font-bold text-xs uppercase tracking-wider transition ${activeTab === 'config' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}">
+                                <i class="fas fa-cogs mr-1.5"></i> Configurar Tipos de Documentos
+                            </button>
+                        </nav>
+                    </div>
+            `;
+
+            if (activeTab === 'history') {
+                html += `
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 font-semibold">
+                                <tr>
+                                    <th class="px-6 py-4">Mês de Referência</th>
+                                    <th class="px-6 py-4 text-center">Documentos</th>
+                                    <th class="px-6 py-4 text-center">Recebidos</th>
+                                    <th class="px-6 py-4 text-center">Pendentes</th>
+                                    <th class="px-6 py-4">Progresso</th>
+                                    <th class="px-6 py-4 text-center">Status Geral</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                `;
+                
+                for(let m = 1; m <= 12; m++) {
+                    const s = getClientPeriodStats(clientId, m);
+                    html += `
+                        <tr class="hover:bg-primary-50/30 cursor-pointer transition-colors" onclick="navigate('client_month', ${clientId}, ${m})">
+                            <td class="px-6 py-4 font-bold text-slate-800">${String(m).padStart(2, '0')}/${currentYear}</td>
+                            <td class="px-6 py-4 text-center text-slate-600 font-medium">${s.expected}</td>
+                            <td class="px-6 py-4 text-center text-primary-600 font-bold">${s.received}</td>
+                            <td class="px-6 py-4 text-center ${s.pending > 0 ? 'text-amber-600 font-bold' : 'text-slate-400'}">${s.pending}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs font-bold text-slate-700 w-8">${s.percent}%</span>
+                                    <div class="w-28 bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                        <div class="bg-primary-500 h-full rounded-full" style="width: ${s.percent}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-3 py-1 rounded-full text-[11px] font-bold border ${s.sitClass} inline-block">${s.situation}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+                html += `</tbody></table></div>`;
+            } 
+            else if (activeTab === 'config') {
+                const rules = db.configs.filter(c => c.client_id === clientId);
+                html += `
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Regras de Documentos da Empresa</h3>
+                            <button onclick="openNewConfigModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Adicionar Regra
+                            </button>
+                        </div>
+                        <div class="p-6">
+                `;
+
+                if(rules.length === 0) {
+                    html += `<div class="text-center py-12 text-slate-400 text-sm font-medium">Nenhum documento configurado para esta empresa. Clique em "Adicionar Regra".</div>`;
+                } else {
+                    html += `<div class="grid gap-4">`;
+                    rules.forEach(r => {
+                        const docName = getFullDocName(r.doc_id, r.custom_doc_name);
+                        const badges = r.months.map(m => `<span class="bg-primary-50 text-primary-700 border border-primary-200 text-[11px] font-semibold px-2.5 py-1 rounded-lg mr-1.5 mb-1.5 inline-block">${monthNames[m-1]}</span>`).join('');
+                        
+                        html += `
+                            <div class="border border-slate-200 rounded-2xl p-5 hover:shadow-subtle transition bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">${docName} ${r.entity ? `<span class="text-slate-500 font-normal ml-1">(${r.entity})</span>` : ''}</h4>
+                                    <p class="text-xs text-slate-500 mt-1">Vencimento: <strong class="text-slate-700">Todo dia ${String(r.due_day).padStart(2,'0')}</strong></p>
+                                    <div class="mt-3">${badges}</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="editConfigModal(${r.id})" class="text-slate-600 hover:text-primary-600 hover:bg-primary-50 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition"><i class="fas fa-edit mr-1"></i> Editar</button>
+                                    <button onclick="deleteConfig(${r.id})" class="text-rose-600 hover:bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition"><i class="fas fa-trash mr-1"></i> Excluir</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div></div>`;
+            }
+
+            html += `</div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- DETALHE DE UM MÊS ESPECÍFICO ---
+        function renderClientMonthDetail(clientId, month) {
+            const client = db.clients.find(c => c.id === clientId);
+            const reqs = getRequiredDocsForMonth(clientId, month);
+            const s = getClientPeriodStats(clientId, month);
+
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 p-6 flex justify-between items-center border-l-4 border-l-primary-500">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">${client.name}</h2>
+                            <p class="text-xs text-slate-500 mt-1">Competência: <strong class="text-primary-700 bg-primary-50 border border-primary-200 px-2.5 py-1 rounded-lg">${formatMonth(month)}</strong></p>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-3 py-1.5 rounded-full text-xs font-bold border mb-1 inline-block ${s.sitClass}">${s.situation}</span>
+                            <div class="text-xs text-slate-500 font-semibold">Progresso: ${s.percent}%</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 font-semibold">
+                                <tr>
+                                    <th class="px-6 py-4">Documento</th>
+                                    <th class="px-6 py-4">Entidade / Banco</th>
+                                    <th class="px-6 py-4">Vencimento</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+            `;
+
+            if (reqs.length === 0) {
+                html += `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-400 text-sm font-medium">Nenhum documento configurado para este mês.</td></tr>`;
+            } else {
+                reqs.forEach(req => {
+                    const docName = getFullDocName(req.doc_id, req.custom_doc_name);
+                    const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === month);
+                    const statusStr = statusObj ? statusObj.status : 'Pendente';
+                    const delay = calculateDelay(req.due_day, month, statusStr);
+                    const dueStr = String(req.due_day).padStart(2,'0') + '/' + formatMonth(month);
+
+                    let statusBadge = "";
+                    if(statusStr === "Recebido") {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold border border-primary-200"><i class="fas fa-check-circle"></i> Recebido</span>`;
+                    } else if(delay > 0) {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 rounded-full text-xs font-bold border border-rose-200"><i class="fas fa-exclamation-triangle"></i> Atrasado (${delay}d)</span>`;
+                    } else {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200"><i class="fas fa-clock"></i> Pendente</span>`;
+                    }
+
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-900">${docName}</td>
+                            <td class="px-6 py-4 text-slate-600 font-medium">${req.entity || '-'}</td>
+                            <td class="px-6 py-4 text-slate-600 font-medium">${dueStr}</td>
+                            <td class="px-6 py-4">${statusBadge}</td>
+                            <td class="px-6 py-4 text-center">
+                                ${statusStr !== "Recebido" 
+                                    ? `<button onclick="toggleDocumentStatus(${req.id}, ${month})" class="bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 mx-auto shadow-subtle"><i class="fas fa-check"></i> Receber</button>`
+                                    : `<button onclick="toggleDocumentStatus(${req.id}, ${month})" class="text-slate-400 hover:text-slate-600 text-xs font-semibold underline transition">Desfazer</button>`
+                                }
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += `</tbody></table></div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- PENDÊNCIAS GLOBAIS ---
+        function renderPendencies() {
+            let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
+            let periodLabel = globalMonth === 'all' ? `Ano Todo (${currentYear})` : `Acumulado até ${formatMonth(globalMonth)}`;
+            let pendencies = [];
+
+            db.clients.forEach(client => {
+                monthsToCheck.forEach(m => {
+                    const reqs = getRequiredDocsForMonth(client.id, m);
+                    reqs.forEach(req => {
+                        const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
+                        if (!statusObj || statusObj.status !== 'Recebido') {
+                            pendencies.push({
+                                clientName: client.name,
+                                clientId: client.id,
+                                docName: getFullDocName(req.doc_id, req.custom_doc_name),
+                                entity: req.entity,
+                                monthLabel: formatMonth(m),
+                                dueStr: String(req.due_day).padStart(2,'0') + '/' + formatMonth(m),
+                                delay: calculateDelay(req.due_day, m, 'Pendente'),
+                                configId: req.id,
+                                month: m
+                            });
+                        }
+                    });
+                });
+            });
+
+            pendencies.sort((a,b) => b.delay - a.delay);
+
+            let html = `
+                <div class="fade-in space-y-4">
+                    <div class="flex items-center gap-2.5 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Pendências Globais:</span> 
+                        <span class="bg-primary-100 text-primary-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-subtle border border-primary-200">${periodLabel}</span>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 font-semibold">
+                                <tr>
+                                    <th class="px-6 py-4">Empresa</th>
+                                    <th class="px-6 py-4">Documento</th>
+                                    <th class="px-6 py-4">Entidade / Banco</th>
+                                    <th class="px-6 py-4">Referência</th>
+                                    <th class="px-6 py-4">Atraso</th>
+                                    <th class="px-6 py-4 text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+            `;
+
+            if(pendencies.length === 0) {
+                html += `<tr><td colspan="6" class="px-6 py-14 text-center text-primary-700 font-bold text-sm"><i class="fas fa-check-circle text-3xl mb-2 block"></i> Nenhuma pendência encontrada para o período selecionado!</td></tr>`;
+            } else {
+                pendencies.forEach(p => {
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-900 cursor-pointer hover:text-primary-600 transition" onclick="navigate('client_month', ${p.clientId}, ${p.month})">${p.clientName}</td>
+                            <td class="px-6 py-4 text-slate-800 font-medium">${p.docName}</td>
+                            <td class="px-6 py-4 text-slate-600">${p.entity || '-'}</td>
+                            <td class="px-6 py-4 text-slate-600 font-semibold">${p.monthLabel}</td>
+                            <td class="px-6 py-4">
+                                ${p.delay > 0 ? `<span class="text-rose-600 font-bold text-xs"><i class="fas fa-exclamation-triangle"></i> ${p.delay} dias</span>` : `<span class="text-amber-600 font-semibold text-xs">No prazo</span>`}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="toggleDocumentStatus(${p.configId}, ${p.month})" class="bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-subtle"><i class="fas fa-check mr-1"></i> Receber</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += `</tbody></table></div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- PAINEL DE COBRANÇA ---
+        function renderChecklist() {
+            let periodLabel = globalMonth === 'all' ? `Ano Todo (${currentYear})` : `Acumulado até ${formatMonth(globalMonth)}`;
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Painel de Cobrança por Empresa</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Exibindo pendências para o período: <strong class="text-primary-700">${periodLabel}</strong>. Inclui meses anteriores até a competência escolhida.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-6">
+            `;
+
+            let hasAnyPendency = false;
+            let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
+
+            db.clients.forEach(client => {
+                let clientHasPendency = false;
+                const docMap = {}; 
+
+                monthsToCheck.forEach(m => {
+                    const reqs = getRequiredDocsForMonth(client.id, m);
+                    reqs.forEach(req => {
+                        const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
+                        if (!statusObj || statusObj.status !== 'Recebido') {
+                            clientHasPendency = true;
+                            hasAnyPendency = true;
+
+                            const docTitle = getFullDocName(req.doc_id, req.custom_doc_name);
+                            const entityName = req.entity || 'Sem entidade específica';
+
+                            if (!docMap[docTitle]) {
+                                docMap[docTitle] = {
+                                    docTitle: docTitle,
+                                    isBank: req.doc_id === 1,
+                                    entities: {}
+                                };
+                            }
+
+                            if (!docMap[docTitle].entities[entityName]) {
+                                docMap[docTitle].entities[entityName] = [];
+                            }
+
+                            if (!docMap[docTitle].entities[entityName].includes(m)) {
+                                docMap[docTitle].entities[entityName].push(m);
+                            }
+                        }
+                    });
+                });
+
+                let consolidatedList = [];
+                Object.keys(docMap).forEach(docTitle => {
+                    let item = docMap[docTitle];
+                    let entitiesArray = Object.keys(item.entities).map(entName => {
+                        let sortedMonths = item.entities[entName].sort((a,b) => a - b);
+                        return {
+                            entityName: entName === 'Sem entidade específica' ? '' : entName,
+                            months: sortedMonths,
+                            monthsFormatted: sortedMonths.map(m => formatMonth(m)).join(', ')
+                        };
+                    });
+
+                    consolidatedList.push({
+                        docKey: docTitle,
+                        docTitle: docTitle,
+                        isBank: item.isBank,
+                        entities: entitiesArray
+                    });
+                });
+
+                if (db.customChecklistOrder[client.id] && consolidatedList.length > 0) {
+                    const orderKeys = db.customChecklistOrder[client.id];
+                    consolidatedList.sort((a, b) => {
+                        let idxA = orderKeys.indexOf(a.docKey);
+                        let idxB = orderKeys.indexOf(b.docKey);
+                        if (idxA === -1) idxA = 999;
+                        if (idxB === -1) idxB = 999;
+                        return idxA - idxB;
+                    });
+                }
+
+                const hasNote = db.notes[client.id] && db.notes[client.id].trim() !== '';
+
+                if (clientHasPendency || hasNote) {
+                    const jsonList = encodeURIComponent(JSON.stringify(consolidatedList));
+
+                    html += `
+                        <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div class="flex items-center gap-3.5">
+                                    <div class="w-9 h-9 rounded-xl bg-primary-100 text-primary-700 font-extrabold flex items-center justify-center text-xs shadow-inner">
+                                        ${client.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">${client.name}</h3>
+                                        <span class="text-[11px] text-slate-400">CNPJ: ${client.cnpj || 'Não informado'}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="sortChecklistAlphabetically(${client.id}, JSON.parse(decodeURIComponent('${jsonList}')))" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5" title="Ordenar documentos de A a Z">
+                                        <i class="fas fa-sort-alpha-down"></i> Ordenar A-Z
+                                    </button>
+                                    <button onclick="copyChecklist(${client.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4.5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 shadow-sm">
+                                        <i class="fab fa-whatsapp text-sm"></i> Copiar Texto para WhatsApp
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                                <div class="lg:col-span-2 space-y-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Documentos Consolidados Pendentes</h4>
+                                        <span class="text-[10px] text-slate-400"><i class="fas fa-arrows-alt-v mr-1"></i> Arraste para reordenar</span>
+                                    </div>
+                    `;
+
+                    if (consolidatedList.length === 0) {
+                        html += `<p class="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl border border-slate-100">Nenhuma pendência de documento no período selecionado. Apenas notas ativas.</p>`;
+                    } else {
+                        consolidatedList.forEach((p, idx) => {
+                            html += `
+                                <div draggable="true" 
+                                     ondragstart="checklistDragStart(event, ${client.id}, ${idx})" 
+                                     ondragover="checklistDragOver(event, ${client.id}, ${idx})" 
+                                     ondragleave="checklistDragLeave(event)" 
+                                     ondrop="checklistDrop(event, ${client.id}, ${idx}, JSON.parse(decodeURIComponent('${jsonList}')))"
+                                     class="checklist-item-card bg-slate-50/80 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 cursor-grab active:cursor-grabbing hover:bg-slate-100/60 transition">
+                                    <div class="flex items-start gap-3 flex-1">
+                                        <span class="text-slate-300 hover:text-slate-500 mt-1"><i class="fas fa-grip-vertical"></i></span>
+                                        <div class="flex-1">
+                                            ${p.isBank ? `
+                                                <span class="text-xs font-extrabold text-primary-900 uppercase tracking-wide bg-primary-100 px-2.5 py-1 rounded-md border border-primary-200 inline-block mb-2">Extrato Bancário</span>
+                                            ` : `
+                                                <span class="text-xs font-bold text-slate-900 bg-white px-2.5 py-1 rounded-md border border-slate-200 inline-block mb-2 shadow-subtle">${p.docTitle}</span>
+                                            `}
+                                            
+                                            <div class="space-y-2 mt-1">
+                            `;
+
+                            p.entities.forEach(ent => {
+                                html += `
+                                    <div class="bg-white/90 border border-slate-200/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-subtle">
+                                        <div>
+                                            ${ent.entityName ? `<p class="text-xs font-bold text-slate-800"><i class="fas fa-university text-slate-400 mr-1"></i> ${ent.entityName}</p>` : `<p class="text-xs font-medium text-slate-500 italic">Sem entidade informada</p>`}
+                                        </div>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">Meses: ${ent.monthsFormatted}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            html += `
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-3 h-3 bg-rose-600 rounded-full shrink-0 self-start sm:self-center" title="Pendente"></div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    html += `
+                                </div>
+
+                                <div class="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 flex flex-col h-full">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                            <i class="fas fa-sticky-note text-amber-600"></i> Notas e Observações
+                                        </label>
+                                        <span class="text-[10px] text-amber-700 font-medium">Salva automático</span>
+                                    </div>
+                                    <textarea rows="5" oninput="saveClientNote(${client.id}, this.value)" placeholder="Digite anotações ou recados para esta empresa..." class="w-full bg-white border border-amber-200 rounded-xl p-3 text-xs text-slate-800 focus:ring-2 focus:ring-amber-400 focus:outline-none resize-none font-medium shadow-subtle">${db.notes[client.id] || ''}</textarea>
+                                    <p class="text-[10px] text-amber-800/80 mt-2 italic">Esta nota será incluída automaticamente ao copiar o texto para o WhatsApp.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasAnyPendency) {
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-card">
+                        <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Tudo em dia!</h3>
+                        <p class="text-slate-500 text-xs mt-1">Não há nenhuma pendência registrada para o período selecionado.</p>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- STATUS DE EXTRATOS BANCÁRIOS ---
+        function renderBankStatements() {
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Status Anual de Extratos Bancários (${currentYear})</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Matriz de monitoramento corporativo por empresa (Janeiro a Dezembro).</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-semibold bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-subtle">
+                            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 bg-primary-500 rounded-sm inline-block shadow-subtle"></span> Completo</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 bg-amber-400 rounded-sm inline-block shadow-subtle"></span> Parcial</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 bg-rose-500 rounded-sm inline-block shadow-subtle"></span> Faltando</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead class="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 font-semibold">
+                                <tr>
+                                    <th class="px-6 py-4 border-r border-slate-200 min-w-[220px]">Empresa</th>
+            `;
+
+            for(let m = 1; m <= 12; m++) {
+                html += `<th class="px-3 py-4 text-center border-r border-slate-200 font-bold">${monthNames[m-1]}</th>`;
+            }
+
+            html += `
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+            `;
+
+            if(db.clients.length === 0) {
+                html += `<tr><td colspan="13" class="px-6 py-14 text-center text-slate-400 text-sm">Nenhuma empresa cadastrada.</td></tr>`;
+            } else {
+                db.clients.forEach(client => {
+                    html += `
+                        <tr class="hover:bg-slate-50/50 transition">
+                            <td class="px-6 py-4 font-bold text-slate-900 border-r border-slate-200 bg-slate-50/30 text-xs">${client.name}</td>
+                    `;
+
+                    for(let m = 1; m <= 12; m++) {
+                        const bankConfigs = db.configs.filter(c => c.client_id === client.id && c.doc_id === 1 && c.months.includes(m));
+                        const totalRequired = bankConfigs.length;
+
+                        let colorClass = "bg-rose-500 border-rose-600";
+                        let statusTooltip = "Sem extrato configurado ou faltando";
+
+                        if (totalRequired > 0) {
+                            let receivedCount = 0;
+                            bankConfigs.forEach(cfg => {
+                                const st = db.statuses.find(s => s.config_id === cfg.id && s.month === m);
+                                if (st && st.status === "Recebido") receivedCount++;
+                            });
+
+                            if (receivedCount === totalRequired) {
+                                colorClass = "bg-primary-500 border-primary-600";
+                                statusTooltip = `Recebido (${receivedCount}/${totalRequired})`;
+                            } else if (receivedCount > 0) {
+                                colorClass = "bg-amber-400 border-amber-500";
+                                statusTooltip = `Parcial (${receivedCount}/${totalRequired})`;
+                            } else {
+                                colorClass = "bg-rose-500 border-rose-600";
+                                statusTooltip = `Faltando todos`;
+                            }
+                        }
+
+                        html += `
+                            <td class="px-3 py-3 text-center border-r border-slate-200">
+                                <div class="w-7 h-7 mx-auto rounded-lg ${colorClass} shadow-subtle border flex items-center justify-center cursor-pointer transform hover:scale-110 transition" title="${client.name} - ${monthNames[m-1]}: ${statusTooltip}" onclick="navigate('client_month', ${client.id}, ${m})">
+                                    <span class="text-white text-[10px] font-black">${totalRequired > 0 ? totalRequired : ''}</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+
+                    html += `</tr>`;
+                });
+            }
+
+            html += `</tbody></table></div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        // --- CONTROLE INTERNO: IMPORTAÇÃO ATHENAS ---
+        function renderImportAthenas() {
+            let sortedClients = [...db.clients].sort((a, b) => a.name.localeCompare(b.name));
+            let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
+
+            let html = `
+                <div class="fade-in space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Controle de Importação Athenas (${currentYear})</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Gerencie quais documentos recebidos já foram importados para o sistema Athenas.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-6">
+            `;
+
+            let hasAnyContent = false;
+
+            sortedClients.forEach(client => {
+                let receivedDocsList = [];
+
+                monthsToCheck.forEach(m => {
+                    const reqs = getRequiredDocsForMonth(client.id, m);
+                    reqs.forEach(req => {
+                        const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
+                        if (statusObj && statusObj.status === 'Recebido') {
+                            const importKey = `${req.id}_${m}_${currentYear}`;
+                            const isImported = !!db.importedStatuses[importKey];
+
+                            receivedDocsList.push({
+                                configId: req.id,
+                                month: m,
+                                monthLabel: formatMonth(m),
+                                docName: getFullDocName(req.doc_id, req.custom_doc_name),
+                                entity: req.entity,
+                                isImported: isImported,
+                                importKey: importKey
+                            });
+                        }
+                    });
+                });
+
+                let pendingImportList = receivedDocsList.filter(item => !item.isImported);
+                let totalReceivedCount = receivedDocsList.length;
+                let totalImportedCount = receivedDocsList.filter(item => item.isImported).length;
+                let importPercent = totalReceivedCount === 0 ? 0 : Math.round((totalImportedCount / totalReceivedCount) * 100);
+
+                if (totalReceivedCount > 0) {
+                    hasAnyContent = true;
+
+                    html += `
+                        <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 overflow-hidden">
+                            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div class="flex items-center gap-3.5">
+                                    <div class="w-9 h-9 rounded-xl bg-primary-100 text-primary-700 font-extrabold flex items-center justify-center text-xs shadow-inner">
+                                        ${client.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">${client.name}</h3>
+                                        <span class="text-[11px] text-slate-400">CNPJ: ${client.cnpj || 'Não informado'}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-subtle">
+                                    <div class="text-right">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status de Importação</span>
+                                        <span class="text-xs font-extrabold text-primary-700">${totalImportedCount} de ${totalReceivedCount} importados</span>
+                                    </div>
+                                    <div class="w-24 bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                        <div class="bg-primary-500 h-full rounded-full transition-all duration-500" style="width: ${importPercent}%"></div>
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-700 w-8">${importPercent}%</span>
+                                </div>
+                            </div>
+
+                            <div class="p-6">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Pendências de Importação (Recebidos aguardando importação)</h4>
+                    `;
+
+                    if (pendingImportList.length === 0) {
+                        html += `<p class="text-xs text-primary-700 bg-primary-50 border border-primary-200 p-3.5 rounded-xl font-medium"><i class="fas fa-check-circle mr-1"></i> Todos os documentos recebidos desta empresa já foram importados no sistema Athenas!</p>`;
+                    } else {
+                        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                        pendingImportList.forEach(item => {
+                            html += `
+                                <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs font-bold text-slate-900">${item.docName}</span>
+                                            <span class="text-[10px] font-semibold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200">${item.monthLabel}</span>
+                                        </div>
+                                        ${item.entity ? `<p class="text-[11px] text-slate-500 mt-1"><i class="fas fa-university text-slate-400 mr-1"></i> ${item.entity}</p>` : ''}
+                                    </div>
+                                    <button onclick="toggleImportStatus(${item.configId}, ${item.month})" class="bg-primary-500 hover:bg-primary-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 shrink-0">
+                                        <i class="fas fa-check"></i> Marcar Importado
+                                    </button>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+
+                    let alreadyImportedList = receivedDocsList.filter(item => item.isImported);
+                    if (alreadyImportedList.length > 0) {
+                        html += `
+                            <div class="mt-5 pt-4 border-t border-slate-100">
+                                <details class="group">
+                                    <summary class="text-xs font-semibold text-slate-500 cursor-pointer hover:text-slate-700 select-none">
+                                        Ver documentos já importados (${alreadyImportedList.length})
+                                    </summary>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        `;
+                        alreadyImportedList.forEach(item => {
+                            html += `
+                                <div class="bg-emerald-50/40 border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs font-bold text-slate-800 line-through">${item.docName}</span>
+                                            <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">${item.monthLabel}</span>
+                                        </div>
+                                        ${item.entity ? `<p class="text-[11px] text-slate-500 mt-0.5">${item.entity}</p>` : ''}
+                                    </div>
+                                    <button onclick="toggleImportStatus(${item.configId}, ${item.month})" class="text-slate-400 hover:text-rose-600 text-xs font-semibold transition underline">
+                                        Desfazer
+                                    </button>
+                                </div>
+                            `;
+                        });
+                        html += `</div></details></div>`;
+                    }
+
+                    html += `</div></div>`;
+                }
+            });
+
+            if (!hasAnyContent) {
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-card">
+                        <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                            <i class="fas fa-file-import"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Nenhum duomenro recebido para importar</h3>
+                        <p class="text-slate-500 text-xs mt-1">Marque documentos como "Recebidos" na parte superior para que apareçam aqui para importação no Athenas.</p>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+            appContent.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDatabase();
+            globalMonth = 'all'; 
+            document.getElementById('global-month').value = 'all';
+            navigate('dashboard');
+        });
     </script>
 </body>
 </html>
