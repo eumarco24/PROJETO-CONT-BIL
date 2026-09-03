@@ -242,13 +242,21 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         let dbAllTeams = {};
-        let currentTeam = 'equipe_01';
-        let db;
-        let currentYear = 2026;
-        let globalMonth = 'all'; 
-        let currentView = 'dashboard';
-        let currentClientId = null;
-        let currentMonthDetail = null;
+let currentTeam = 'equipe_01';
+let db;
+let currentYear = 2026;
+let globalMonth = 'all'; 
+let currentView = 'dashboard';
+let currentClientId = null;
+let currentMonthDetail = null;
+
+const SUPABASE_URL = 'https://mrcxxhbzsvvrwlocvlsx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_4tKChmC2WgE89fe8vg0CFQ_UIVQNcm0';
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
 
         const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
