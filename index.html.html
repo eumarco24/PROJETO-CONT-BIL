@@ -95,7 +95,7 @@
             <div class="mt-8 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/80">Sistema</div>
             <div class="mt-auto px-1 pt-4">
                 <button onclick="resetDatabase()" class="w-full bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs py-2.5 px-3 rounded-xl border border-red-900/50 transition font-medium flex items-center justify-center gap-2">
-                    <i class="fas fa-trash-alt"></i> Resetar Dados
+                    <i class="fas fa-trash-alt"></i> Resetar Equipe Atual
                 </button>
             </div>
         </nav>
@@ -121,13 +121,25 @@
         <header class="bg-white h-16 shadow-subtle border-b border-slate-200/80 flex items-center justify-between px-8 z-10">
             <div id="page-title" class="text-base font-bold text-slate-800 flex items-center gap-2.5"></div>
             <div class="flex items-center gap-4">
+                <!-- Seletor de Equipe na parte superior -->
+                <div class="flex items-center gap-2 bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <i class="fas fa-users text-primary-600 text-xs"></i>
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Equipe:</span>
+                    <select id="current-team-select" onchange="changeCurrentTeam(this.value)" class="bg-transparent text-sm font-bold text-slate-800 focus:outline-none cursor-pointer">
+                        <option value="equipe_01">Equipe 01</option>
+                        <option value="equipe_02">Equipe 02</option>
+                        <option value="equipe_03">Equipe 03</option>
+                        <option value="equipe_04">Equipe 04</option>
+                        <option value="equipe_05">Equipe 05</option>
+                    </select>
+                </div>
                 <div class="flex items-center gap-2.5 bg-slate-100/80 px-3.5 py-1.5 rounded-xl border border-slate-200">
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Período:</span>
                     <select id="global-month" onchange="changeGlobalMonth(this.value)" class="bg-transparent text-sm font-bold text-slate-800 focus:outline-none cursor-pointer">
                         <option value="all">Visão Anual (Todo o Ano)</option>
                     </select>
                 </div>
-                <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shadow-inner border border-primary-200">
+                <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shadow-inner border border-primary-200" title="Marco Guilherme">
                     MG
                 </div>
             </div>
@@ -229,6 +241,8 @@
     </div>
 
     <script>
+        let dbAllTeams = {};
+        let currentTeam = 'equipe_01';
         let db;
         let currentYear = 2026;
         let globalMonth = 'all'; 
@@ -258,32 +272,71 @@
             statuses: [],
             notes: {},
             customChecklistOrder: {},
-            importedStatuses: {} // Armazena o status de importação Athenas por chave (config_id + '_' + month)
+            importedStatuses: {}
         };
 
         function loadDatabase() {
-            const saved = localStorage.getItem('contabilDB_V9');
-            if (saved) db = JSON.parse(saved);
-            else {
-                db = JSON.parse(JSON.stringify(initialData));
+            const saved = localStorage.getItem('contabilDB_MultiTeams_V10');
+            if (saved) {
+                dbAllTeams = JSON.parse(saved);
+            } else {
+                // Inicializa separadamente para as 5 equipes
+                dbAllTeams = {
+                    'equipe_01': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_02': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_03': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_04': JSON.parse(JSON.stringify(initialData)),
+                    'equipe_05': JSON.parse(JSON.stringify(initialData))
+                };
                 saveDatabase();
             }
+
+            if(!dbAllTeams[currentTeam]) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+            }
+            
+            db = dbAllTeams[currentTeam];
             if(!db.notes) db.notes = {};
             if(!db.customChecklistOrder) db.customChecklistOrder = {};
             if(!db.importedStatuses) db.importedStatuses = {};
             
             document.getElementById('current-year-select').value = currentYear;
+            document.getElementById('current-team-select').value = currentTeam;
             populateSelectors();
         }
 
         function saveDatabase() {
-            localStorage.setItem('contabilDB_V9', JSON.stringify(db));
+            localStorage.setItem('contabilDB_MultiTeams_V10', JSON.stringify(dbAllTeams));
+        }
+
+        function changeCurrentTeam(teamKey) {
+            currentTeam = teamKey;
+            if(!dbAllTeams[currentTeam]) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+            }
+            db = dbAllTeams[currentTeam];
+            if(!db.notes) db.notes = {};
+            if(!db.customChecklistOrder) db.customChecklistOrder = {};
+            if(!db.importedStatuses) db.importedStatuses = {};
+
+            populateSelectors();
+            if (currentView === 'dashboard') renderDashboard();
+            else if (currentView === 'pendencies') renderPendencies();
+            else if (currentView === 'checklist') renderChecklist();
+            else if (currentView === 'bank_statements') renderBankStatements();
+            else if (currentView === 'import_athenas') renderImportAthenas();
+            else if (currentView === 'client_dashboard') renderClientDashboard(currentClientId, 'history');
+            else if (currentView === 'client_dashboard_config') renderClientDashboard(currentClientId, 'config');
+            else if (currentView === 'client_month') renderClientMonthDetail(currentClientId, currentMonthDetail);
+            else navigate('dashboard');
         }
 
         function resetDatabase() {
-            if(confirm('Tem certeza que deseja apagar todos os dados e resetar o sistema?')) {
-                localStorage.removeItem('contabilDB_V9');
-                location.reload();
+            if(confirm('Tem certeza que deseja apagar todos os dados e resetar a equipe atual (' + document.getElementById('current-team-select').options[document.getElementById('current-team-select').selectedIndex].text + ')?')) {
+                dbAllTeams[currentTeam] = JSON.parse(JSON.stringify(initialData));
+                db = dbAllTeams[currentTeam];
+                saveDatabase();
+                navigate('dashboard');
             }
         }
 
@@ -478,42 +531,57 @@
 
         function copyChecklist(clientId) {
             const client = db.clients.find(c => c.id === clientId);
-            let text = `Olá! Tudo bem?\nSegue a relação de documentos pendentes da empresa *${client.name}* (${currentYear}):\n\n`;
+            let text = `Informamos que estão ausentes em nosso banco de dados os seguintes documentos:\n\n`;
 
             let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
+            
+            let docMap = {};
             let hasPendencies = false;
 
             monthsToCheck.forEach(m => {
                 const reqs = getRequiredDocsForMonth(client.id, m);
-                let monthPendencies = [];
-                
                 reqs.forEach(req => {
                     const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
-                    if (!statusObj || statusObj.status !== 'Recebido') monthPendencies.push(req);
+                    if (!statusObj || statusObj.status !== 'Recebido') {
+                        hasPendencies = true;
+                        const docTitle = getFullDocName(req.doc_id, req.custom_doc_name);
+                        const entityName = req.entity ? ` - ${req.entity}` : '';
+                        const key = docTitle + entityName;
+
+                        if (!docMap[key]) {
+                            docMap[key] = [];
+                        }
+                        if (!docMap[key].includes(m)) {
+                            docMap[key].push(m);
+                        }
+                    }
                 });
-
-                if(monthPendencies.length > 0) {
-                    hasPendencies = true;
-                    text += `*Referência: ${formatMonth(m)}*\n`;
-                    monthPendencies.forEach(p => {
-                        const docName = getFullDocName(p.doc_id, p.custom_doc_name);
-                        const entityStr = p.entity ? ` (${p.entity})` : '';
-                        text += `[  ] ${docName}${entityStr}\n`;
-                    });
-                    text += `\n`;
-                }
             });
-
-            if(db.notes[clientId] && db.notes[clientId].trim() !== '') {
-                text += `*Observações / Notas:*\n${db.notes[clientId]}\n\n`;
-            }
 
             if(!hasPendencies && (!db.notes[clientId] || db.notes[clientId].trim() === '')) {
                 alert("Esta empresa não possui pendências ou notas para copiar!");
                 return;
             }
 
-            text += `Por favor, nos envie assim que possível!\nQualquer dúvida, estamos à disposição.`;
+            Object.keys(docMap).forEach(key => {
+                let sortedMonths = docMap[key].sort((a, b) => a - b).map(m => String(m).padStart(2, '0'));
+                let monthsStr = '';
+                if (sortedMonths.length === 1) {
+                    monthsStr = sortedMonths[0];
+                } else if (sortedMonths.length === 2) {
+                    monthsStr = `${sortedMonths[0]} e ${sortedMonths[1]}`;
+                } else {
+                    let last = sortedMonths.pop();
+                    monthsStr = `${sortedMonths.join(', ')} e ${last}`;
+                }
+                text += `${key} - meses: ${monthsStr}.\n`;
+            });
+
+            if(db.notes[clientId] && db.notes[clientId].trim() !== '') {
+                text += `\n*Observações:* \n${db.notes[clientId]}\n`;
+            }
+
+            text += `\nPor favor, nos envie assim que possível!\nQualquer dúvida, estamos à disposição.`;
 
             navigator.clipboard.writeText(text).then(() => {
                 alert("Relação copiada com sucesso! Cole diretamente no WhatsApp.");
@@ -522,7 +590,6 @@
             });
         }
 
-        // Função para alternar status de importação Athenas
         function toggleImportStatus(configId, month) {
             const key = `${configId}_${month}_${currentYear}`;
             if (db.importedStatuses[key]) {
@@ -1462,7 +1529,6 @@
 
         // --- CONTROLE INTERNO: IMPORTAÇÃO ATHENAS ---
         function renderImportAthenas() {
-            // Ordena as empresas alfabeticamente para exibição
             let sortedClients = [...db.clients].sort((a, b) => a.name.localeCompare(b.name));
             let monthsToCheck = globalMonth === 'all' ? Array.from({length: 12}, (_, i) => i + 1) : Array.from({length: globalMonth}, (_, i) => i + 1);
 
@@ -1486,7 +1552,6 @@
                     const reqs = getRequiredDocsForMonth(client.id, m);
                     reqs.forEach(req => {
                         const statusObj = db.statuses.find(x => x.config_id === req.id && x.month === m);
-                        // Apenas documentos marcados como 'Recebido'
                         if (statusObj && statusObj.status === 'Recebido') {
                             const importKey = `${req.id}_${m}_${currentYear}`;
                             const isImported = !!db.importedStatuses[importKey];
@@ -1504,10 +1569,7 @@
                     });
                 });
 
-                // Filtra para exibir apenas os que ainda NÃO foram importados na tela de pendência de importação
                 let pendingImportList = receivedDocsList.filter(item => !item.isImported);
-                
-                // Cálculo do Dashboard de Importação da empresa (percentual de arquivos recebidos que já foram importados)
                 let totalReceivedCount = receivedDocsList.length;
                 let totalImportedCount = receivedDocsList.filter(item => item.isImported).length;
                 let importPercent = totalReceivedCount === 0 ? 0 : Math.round((totalImportedCount / totalReceivedCount) * 100);
@@ -1527,7 +1589,6 @@
                                         <span class="text-[11px] text-slate-400">CNPJ: ${client.cnpj || 'Não informado'}</span>
                                     </div>
                                 </div>
-                                <!-- Dashboard lateral da empresa para importação -->
                                 <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-subtle">
                                     <div class="text-right">
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status de Importação</span>
@@ -1567,7 +1628,6 @@
                         html += `</div>`;
                     }
 
-                    // Seção opcional para ver o histórico dos já importados (reverter se necessário)
                     let alreadyImportedList = receivedDocsList.filter(item => item.isImported);
                     if (alreadyImportedList.length > 0) {
                         html += `
@@ -1607,8 +1667,8 @@
                         <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
                             <i class="fas fa-file-import"></i>
                         </div>
-                        <h3 class="text-base font-bold text-slate-900">Nenhum documento recebido para importar</h3>
-                        <p class="text-slate-500 text-xs mt-1">Marque documentos como "Recebidos" na parte principal para que apareçam aqui para importação no Athenas.</p>
+                        <h3 class="text-base font-bold text-slate-900">Nenhum duomenro recebido para importar</h3>
+                        <p class="text-slate-500 text-xs mt-1">Marque documentos como "Recebidos" na parte superior para que apareçam aqui para importação no Athenas.</p>
                     </div>
                 `;
             }
