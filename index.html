@@ -344,10 +344,37 @@ const supabaseClient = window.supabase.createClient(
         }
 
         // ---------------------------------------------------------
-        // MONTA A ESTRUTURA DO SISTEMA A PARTIR DO SUPABASE
-        // ---------------------------------------------------------
+// MONTA A ESTRUTURA DO SISTEMA A PARTIR DO SUPABASE
+// ---------------------------------------------------------
 
-        dbAllTeams = {};
+// Enquanto a migração para o Supabase ainda não foi feita,
+// mantém os dados antigos do navegador como fallback.
+if (!clientes || clientes.length === 0) {
+    const saved = localStorage.getItem('contabilDB_MultiTeams_V10');
+
+    if (saved) {
+        dbAllTeams = JSON.parse(saved);
+
+        if (!dbAllTeams[currentTeam]) {
+            dbAllTeams[currentTeam] =
+                JSON.parse(JSON.stringify(initialData));
+        }
+
+        db = dbAllTeams[currentTeam];
+
+        if (!db.notes) db.notes = {};
+        if (!db.customChecklistOrder) db.customChecklistOrder = {};
+        if (!db.importedStatuses) db.importedStatuses = {};
+
+        populateSelectors();
+
+        console.log('Supabase vazio. Dados locais mantidos temporariamente.');
+
+        return;
+    }
+}
+
+dbAllTeams = {};
 
         const equipes = [
             'equipe_01',
