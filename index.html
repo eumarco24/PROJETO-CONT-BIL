@@ -283,11 +283,259 @@ const supabaseClient = window.supabase.createClient(
             importedStatuses: {}
         };
 
-        function loadDatabase() {
-            const saved = localStorage.getItem('contabilDB_MultiTeams_V10');
-            if (saved) {
-                dbAllTeams = JSON.parse(saved);
-            } else {
+        async function loadDatabase() {
+    try {
+        console.log('Conectando ao Supabase...');
+
+        const { data: clientes, error: clientesError } = await supabaseClient
+            .from('clientes')
+            .select('*')
+            .order('ordem', { ascending: true });
+
+        if (clientesError) {
+            console.error('Erro ao carregar clientes:', clientesError);
+            throw clientesError;
+        }
+
+        const { data: configs, error: configsError } = await supabaseClient
+            .from('configuracoes_documentos')
+            .select('*');
+
+        if (configsError) {
+            console.error('Erro ao carregar configurações:', configsError);
+            throw configsError;
+        }
+
+        const { data: statuses, error: statusesError } = await supabaseClient
+            .from('status_documentos')
+            .select('*');
+
+        if (statusesError) {
+            console.error('Erro ao carregar status:', statusesError);
+            throw statusesError;
+        }
+
+        const { data: notas, error: notasError } = await supabaseClient
+            .from('notas_clientes')
+            .select('*');
+
+        if (notasError) {
+            console.error('Erro ao carregar notas:', notasError);
+            throw notasError;
+        }
+
+        const { data: ordens, error: ordensError } = await supabaseClient
+            .from('ordem_checklist')
+            .select('*')
+            .order('posicao', { ascending: true });
+
+        if (ordensError) {
+            console.error('Erro ao carregar ordem do checklist:', ordensError);
+            throw ordensError;
+        }
+
+        const { data: importacoes, error: importacoesError } = await supabaseClient
+            .from('importacoes_athenas')
+            .select('*');
+
+        if (importacoesError) {
+            console.error('Erro ao carregar importações Athenas:', importacoesError);
+            throw importacoesError;
+        }
+
+        // ---------------------------------------------------------
+        // MONTA A ESTRUTURA DO SISTEMA A PARTIR DO SUPABASE
+        // ---------------------------------------------------------
+
+        dbAllTeams = {};
+
+        const equipes = [
+            'equipe_01',
+            'equipe_02',
+            'equipe_03',
+            'equipe_04',
+            'equipe_05'
+        ];
+
+        equipes.forEach(equipe => {
+            dbAllTeams[equipe] = {
+                docTypes: JSON.parse(JSON.stringify(initialData.docTypes)),
+                clients: [],
+                configs: [],
+                statuses: [],
+                notes: {},
+                customChecklistOrder: {},
+                importedStatuses: {}
+            };
+        });
+
+        // CLIENTES
+        (clientes || []).forEach(cliente => {
+            const equipe = cliente.equipe || 'equipe_01';
+
+            if (!dbAllTeams[equipe]) {
+                dbAllTeams[equipe] = {
+                    docTypes: JSON.parse(JSON.stringify(initialData.docTypes)),
+                    clients: [],
+                    configs: [],
+                    statuses: [],
+                    notes: {},
+                    customChecklistOrder: {},
+                    importedStatuses: {}
+                };
+            }
+
+            dbAllTeams[equipe].clients.push({
+                id: cliente.id,
+                name: cliente.nome,
+                cnpj: cliente.cnpj || '',
+                ordem: cliente.ordem || 0
+            });
+        });
+
+        // CONFIGURAÇÕES DOS DOCUMENTOS
+        (configs || []).forEach(config => {
+            const cliente = (clientes || []).find(c => c.id === config.client_id);
+            if (!cliente) return;
+
+            const equipe = cliente.equipe || 'equipe_01';
+
+            dbAllTeams[equipe].configs.push({
+                id: config.id,
+                client_id: config.client_id,
+                doc_id: config.doc_id,
+                custom_doc_name: config.custom_doc_name || '',
+                entity: config.entity || '',
+                due_day: config.due_day,
+                months: Array.isArray(config.months) ? config.months : []
+            });
+        });
+
+        // STATUS DOS DOCUMENTOS
+        (statuses || []).forEach(status => {
+            const config = (configs || []).find(c => c.id === status.config_id);
+            if (!config) return;
+
+            const cliente = (clientes || []).find(c => c.id === config.client_id);
+            if (!cliente) return;
+
+            const equipe = cliente.equipe || 'equipe_01';
+
+            dbAllTeams[equipe].statuses.push({
+                id: status.id,
+                config_id: status.config_id,
+                month: status.mes,
+                year: status.ano,
+                status: status.status
+            });
+        });
+
+        // NOTAS
+        (notas || []).forEach(nota => {
+            const cliente = (clientes || []).find(c => c.id === nota.client_id);
+            if (!cliente) return;
+
+            const equipe = cliente.equipe || 'equipe_01';
+            dbAllTeams[equipe].notes[nota.client_id] = nota.texto || '';
+        });
+
+        // ORDEM PERSONALIZADA DO CHECKLIST
+        (ordens || []).forEach(ordem => {
+            const cliente = (clientes || []).find(c => c.id === ordem.client_id);
+            if (!cliente) return;
+
+            const equipe = cliente.equipe || 'equipe_01';
+
+            if (!dbAllTeams[equipe].customChecklistOrder[ordem.client_id]) {
+                dbAllTeams[equipe].customChecklistOrder[ordem.client_id] = [];
+            }
+
+            dbAllTeams[equipe].customChecklistOrder[ordem.client_id].push(
+                ordem.doc_key
+            );
+        });
+
+        // IMPORTAÇÕES ATHENAS
+        (importacoes || []).forEach(importacao => {
+            const config = (configs || []).find(c => c.id === importacao.config_id);
+            if (!config) return;
+
+            const cliente = (clientes || []).find(c => c.id === config.client_id);
+            if (!cliente) return;
+
+            const equipe = cliente.equipe || 'equipe_01';
+
+            if (importacao.imported) {
+                const key =
+                    `${importacao.config_id}_${importacao.mes}_${importacao.ano}`;
+
+                dbAllTeams[equipe].importedStatuses[key] = true;
+            }
+        });
+
+        // Ordena clientes
+        equipes.forEach(equipe => {
+            dbAllTeams[equipe].clients.sort(
+                (a, b) => (a.ordem || 0) - (b.ordem || 0)
+            );
+        });
+
+        // Equipe atual
+        if (!dbAllTeams[currentTeam]) {
+            currentTeam = 'equipe_01';
+        }
+
+        db = dbAllTeams[currentTeam];
+
+        if (!db.notes) db.notes = {};
+        if (!db.customChecklistOrder) db.customChecklistOrder = {};
+        if (!db.importedStatuses) db.importedStatuses = {};
+
+        document.getElementById('current-year-select').value = currentYear;
+        document.getElementById('current-team-select').value = currentTeam;
+
+        populateSelectors();
+
+        console.log('Supabase carregado com sucesso.');
+        console.log('Clientes encontrados:', clientes?.length || 0);
+
+    } catch (error) {
+        console.error('Erro ao carregar banco de dados:', error);
+
+        alert(
+            'Não foi possível carregar os dados do Supabase.\\n\\n' +
+            'Verifique a conexão e tente novamente.'
+        );
+
+        // Mantém uma cópia local como fallback
+        const saved = localStorage.getItem('contabilDB_MultiTeams_V10');
+
+        if (saved) {
+            dbAllTeams = JSON.parse(saved);
+        } else {
+            dbAllTeams = {
+                'equipe_01': JSON.parse(JSON.stringify(initialData)),
+                'equipe_02': JSON.parse(JSON.stringify(initialData)),
+                'equipe_03': JSON.parse(JSON.stringify(initialData)),
+                'equipe_04': JSON.parse(JSON.stringify(initialData)),
+                'equipe_05': JSON.parse(JSON.stringify(initialData))
+            };
+        }
+
+        if (!dbAllTeams[currentTeam]) {
+            dbAllTeams[currentTeam] =
+                JSON.parse(JSON.stringify(initialData));
+        }
+
+        db = dbAllTeams[currentTeam];
+
+        if (!db.notes) db.notes = {};
+        if (!db.customChecklistOrder) db.customChecklistOrder = {};
+        if (!db.importedStatuses) db.importedStatuses = {};
+
+        populateSelectors();
+    }
+} else {
                 // Inicializa separadamente para as 5 equipes
                 dbAllTeams = {
                     'equipe_01': JSON.parse(JSON.stringify(initialData)),
@@ -1685,12 +1933,15 @@ const supabaseClient = window.supabase.createClient(
             appContent.innerHTML = html;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDatabase();
-            globalMonth = 'all'; 
-            document.getElementById('global-month').value = 'all';
-            navigate('dashboard');
-        });
+        document.addEventListener('DOMContentLoaded', async () => {
+    globalMonth = 'all';
+
+    await loadDatabase();
+
+    document.getElementById('global-month').value = 'all';
+
+    navigate('dashboard');
+});
     </script>
 </body>
 </html>
